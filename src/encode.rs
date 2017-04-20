@@ -1,15 +1,17 @@
 use std::fs::File;
 use std::io::Read;
 use std::io::Bytes;
+use std::iter::Iterator;
 
-const EMPTY_PIXEL:u8  = 255;
+const EMPTY_PIXEL: u8 = 255;
 
-pub fn encode(content: &mut Bytes<File>, width:usize) ->  Vec<Vec<[u8;3]>>{
+pub fn encode(content: &mut Bytes<File>, width: usize) -> Vec<Vec<[u8; 3]>> {
     let pixels = to_rgbs(content);
-    into_width(&pixels.as_slice(),width)
+    //                V into_iter() consumes
+    into_width(pixels.into_iter(), width)
 }
 
-fn to_rgbs(content:&mut Bytes<File>) -> Vec<[u8;3]> {
+fn to_rgbs(content: &mut Bytes<File>) -> Vec<[u8; 3]> {
     let mut pixels = Vec::new();
     let mut bytes = content.map(|e| e.ok());
     while let Some(Some(r)) = bytes.next() {
@@ -17,13 +19,13 @@ fn to_rgbs(content:&mut Bytes<File>) -> Vec<[u8;3]> {
         // FIXME; take(self, usize) -> Take(self) .. not very handy here
         let g = joinM(bytes.next()).unwrap_or(EMPTY_PIXEL);
         let b = joinM(bytes.next()).unwrap_or(EMPTY_PIXEL);
-        pixels.push([r,g,b]);
+        pixels.push([r, g, b]);
     }
     pixels
 }
 
-fn into_width<T>(v: &[T], width:usize) -> Vec<Vec<T>>
-where T:Clone
+fn into_width<T>(v: T, width: usize) -> Vec<Vec<T::Item>>
+    where T: Iterator
 {
     let mut c = 0;
     let mut result = Vec::new();
@@ -31,7 +33,7 @@ where T:Clone
     for i in v {
         if c < width {
             c += 1;
-            row.push(i.clone());
+            row.push(i);
         } else {
             c = 0;
             result.push(row);
@@ -43,6 +45,6 @@ where T:Clone
 }
 
 // TODO : make more polymorphic
-fn joinM<T> (e:Option<Option<T>>) -> Option<T> {
+fn joinM<T>(e: Option<Option<T>>) -> Option<T> {
     e.unwrap_or(None)
 }

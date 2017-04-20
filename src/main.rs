@@ -11,11 +11,10 @@ mod encode;
 
 fn main() {
     println!("Hello, world!");
-    let mut file = match File::open("./src/main.rs"){
+    let mut file = match File::open("./src/main.rs") {
         Ok(f) => f,
-        Err(r) => panic!("{}",r)
+        Err(r) => panic!("{}", r),
     };
     let mut bytes = file.bytes();
     println!("{:?}", encode::encode(&mut bytes, 100))
 }
-
