@@ -1,0 +1,7 @@
+[package]
+name = "colourful-converter"
+version = "0.1.0"
+authors = ["lesguillemets <lesguillemets@users.noreply.github.com>"]
+
+[dependencies]
+image = "*"
