@@ -20,12 +20,50 @@ pub fn read_bytes(f: File) -> Vec<Vec<u8>> {
     v
 }
 
+struct DecodeInfo {
+    start: usize,
+    width: usize,
+    size: usize,
+}
+
+impl DecodeInfo {
+    fn new(s: usize, w: usize, sz: usize) -> DecodeInfo {
+        DecodeInfo {
+            start: s,
+            width: w,
+            size: sz,
+        }
+    }
+}
+
 fn decode(dat: Vec<Vec<u8>>) -> Vec<u8> {
     let mut body = dat.into_iter().skip_while(|l| is_empty(&l));
     let mut header = body.next().expect("empty body");
+    let info = handle_header(&header);
     // FIXME chunks? but we only want the first 3
-    let size = decode_size(&[header[0], header[1], header[2]]);
+    read_body(body, info)
+}
+
+fn read_body<F>(mut body: F, info: DecodeInfo) -> Vec<u8>
+    where F: Iterator,
+          F::Item: u7
+{
     vec![]
+}
+
+
+fn handle_header(header: &[u8]) -> DecodeInfo {
+    let mut x = header.chunks(3).enumerate().skip_while(|&(i, p)| is_empty(p));
+    let top_left = x.next().expect("empty header?");
+    let start = top_left.0;
+    let size = decode_size(top_left.1);
+    let mut rightmost = 0;
+    while let Some((i, px)) = x.next() {
+        if !is_empty(px) {
+            rightmost = i;
+        }
+    }
+    DecodeInfo::new(start, rightmost - start + 1, size)
 }
 
 fn is_empty(line: &[u8]) -> bool {
@@ -34,6 +72,7 @@ fn is_empty(line: &[u8]) -> bool {
     (first == 255 || first == 0) && line.iter().all(|&c| c == first)
 }
 
-fn decode_size(pixel: &[u8; 3]) -> usize {
+// TODO : something like &[u8;3]
+fn decode_size(pixel: &[u8]) -> usize {
     2
 }
