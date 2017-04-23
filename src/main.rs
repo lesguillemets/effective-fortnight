@@ -3,7 +3,6 @@ extern crate image;
 use std::fs::File;
 use std::path::Path;
 use std::io::Read;
-use std::io::Bytes;
 // use image;
 
 mod encode;

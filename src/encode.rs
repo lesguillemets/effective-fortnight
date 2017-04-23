@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::io::Read;
 use std::io::Bytes;
 use std::iter::Iterator;
 use image;
@@ -19,13 +18,13 @@ pub fn to_image(content: &mut Bytes<File>,
     // TODO : check the height, separate the chunk if necessary
     let mut buf = image::ImageBuffer::new(width, height as u32);
     create_first_line(&mut buf, width, total_channels);
-    let mut rgbs = to_rgbs(bytes).into_iter();
+    let rgbs = to_rgbs(bytes).into_iter();
     {
         let mut pixels = buf.pixels_mut();
         for _ in 0..width {
             pixels.next();
         }
-        while let Some(p) = rgbs.next() {
+        for p in rgbs {
             let pixel = pixels.next().expect("er");
             *pixel = p;
         }
@@ -44,7 +43,7 @@ fn encode_size(size: usize) -> image::Rgb<u8> {
     let mut v = Vec::new();
     let mut s = size;
     for _ in 0..3 {
-        let (d, m) = (size / 256, size % 256);
+        let (d, m) = (s / 256, s % 256);
         s = d;
         v.push(m as u8);
     }
@@ -61,41 +60,14 @@ fn collect_bytes(content: &mut Bytes<File>) -> Vec<u8> {
     result
 }
 fn to_rgbs(content: Vec<u8>) -> Vec<image::Rgb<u8>> {
-    let emp = EMPTY_PIXEL; // hmm. FIXME
     let mut pixels = Vec::new();
-    let mut bytes = content.iter();
+    let mut bytes = content.into_iter();
     while let Some(r) = bytes.next() {
         // tedious
         // FIXME; take(self, usize) -> Take(self) .. not very handy here
-        let g = bytes.next().unwrap_or(&emp);
-        let b = bytes.next().unwrap_or(&emp);
-        pixels.push(image::Rgb([*r, *g, *b]));
+        let g = bytes.next().unwrap_or(EMPTY_PIXEL);
+        let b = bytes.next().unwrap_or(EMPTY_PIXEL);
+        pixels.push(image::Rgb([r, g, b]));
     }
     pixels
 }
-
-fn into_width<T>(v: T, width: usize) -> Vec<Vec<T::Item>>
-    where T: Iterator
-{
-    let mut c = 0;
-    let mut result = Vec::new();
-    let mut row = Vec::new();
-    for i in v {
-        if c < width {
-            c += 1;
-            row.push(i);
-        } else {
-            c = 0;
-            result.push(row);
-            row = Vec::new();
-        }
-    }
-    result.push(row);
-    result
-}
-
-// TODO : make more polymorphic
-fn joinM<T>(e: Option<Option<T>>) -> Option<T> {
-    e.unwrap_or(None)
-}
-// What
