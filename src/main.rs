@@ -6,6 +6,7 @@ use std::io::Read;
 // use image;
 
 mod encode;
+mod decode;
 
 // use encode;
 
@@ -19,4 +20,11 @@ fn main() {
     let imgbuf = encode::to_image(&mut bytes, 30);
     let mut outf = &mut File::create(&Path::new("out.png")).expect("fileerror");
     image::ImageRgb8(imgbuf).save(outf, image::PNG);
+
+    let f2 = File::open("out.png").expect("HI");
+    for line in decode::read_bytes(f2) {
+        for c in line {
+            print!("{}", c as char);
+        }
+    }
 }
