@@ -17,6 +17,7 @@ pub fn to_image(content: &mut Bytes<File>,
     };
     // TODO : check the height, separate the chunk if necessary
     let mut buf = image::ImageBuffer::new(width, height as u32);
+    // TODO : image::buffer::PixelsMut is private.
     create_first_line(&mut buf, width, total_channels);
     let rgbs = to_rgbs(bytes).into_iter();
     {
@@ -36,6 +37,8 @@ fn create_first_line(buf: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
                      width: u32,
                      len: usize) {
     buf[(0, 0)] = encode_size(len);
+    // TODO: want to make it a constant
+    buf[(width - 1, 0)] = image::Rgb([128, 128, 128]);
 }
 
 fn encode_size(size: usize) -> image::Rgb<u8> {
