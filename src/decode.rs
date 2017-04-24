@@ -40,13 +40,11 @@ fn decode(dat: Vec<Vec<u8>>) -> Vec<u8> {
     let mut body = dat.into_iter().skip_while(|l| is_empty(&l));
     let mut header = body.next().expect("empty body");
     let info = handle_header(&header);
-    // FIXME chunks? but we only want the first 3
-    read_body(body, info)
+    read_body(body, &info)
 }
 
-fn read_body<F>(mut body: F, info: DecodeInfo) -> Vec<u8>
-    where F: Iterator,
-          F::Item: u7
+fn read_body<F>(mut body: F, info: &DecodeInfo) -> Vec<u8>
+    where F: Iterator<Item = Vec<u8>>
 {
     vec![]
 }
@@ -57,12 +55,7 @@ fn handle_header(header: &[u8]) -> DecodeInfo {
     let top_left = x.next().expect("empty header?");
     let start = top_left.0;
     let size = decode_size(top_left.1);
-    let mut rightmost = 0;
-    while let Some((i, px)) = x.next() {
-        if !is_empty(px) {
-            rightmost = i;
-        }
-    }
+    let rightmost = x.fold(0, |acc, (i, px)| if !is_empty(px) { i } else { acc });
     DecodeInfo::new(start, rightmost - start + 1, size)
 }
 
