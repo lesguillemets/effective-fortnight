@@ -49,7 +49,7 @@ fn decode(dat: Vec<Vec<u8>>) -> Vec<u8> {
 }
 
 fn read_body<F>(mut body: F, info: &DecodeInfo) -> Vec<u8>
-    where F: Iterator<Item = Vec<u8>>
+    where F: Iterator<Item = Vec<u8>> // TODO: we could first skip(info.start)
 {
     let read_line =
         |l: Vec<u8>| -> Vec<u8> { l.into_iter().skip(info.start).take(info.channel_width).collect() };
@@ -58,8 +58,12 @@ fn read_body<F>(mut body: F, info: &DecodeInfo) -> Vec<u8>
         let mut line = read_line(body.next().expect("lines less than expected"));
         result.append(&mut line);
     }
-    let mut last =
-        body.next().expect("lines lessthan expected").into_iter().take(info.rem).collect();
+    let mut last = body.next()
+        .expect("lines lessthan expected")
+        .into_iter()
+        .skip(info.start)
+        .take(info.rem)
+        .collect();
     result.append(&mut last);
     result
 }
