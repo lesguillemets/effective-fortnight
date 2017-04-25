@@ -20,18 +20,23 @@ pub fn read_bytes(f: File) -> Vec<Vec<u8>> {
     v
 }
 
+#[derive (Debug)]
 struct DecodeInfo {
     start: usize,
-    width: usize,
+    channel_width: usize,
     size: usize,
+    height: usize,
+    rem: usize,
 }
 
 impl DecodeInfo {
     fn new(s: usize, w: usize, sz: usize) -> DecodeInfo {
         DecodeInfo {
             start: s,
-            width: w,
+            channel_width: w,
             size: sz,
+            height: (sz + w - 1) / w,
+            rem: sz % w,
         }
     }
 }
@@ -46,7 +51,17 @@ fn decode(dat: Vec<Vec<u8>>) -> Vec<u8> {
 fn read_body<F>(mut body: F, info: &DecodeInfo) -> Vec<u8>
     where F: Iterator<Item = Vec<u8>>
 {
-    vec![]
+    let read_line =
+        |l: Vec<u8>| -> Vec<u8> { l.into_iter().skip(info.start).take(info.channel_width).collect() };
+    let mut result = Vec::new();
+    for _ in 0..info.height - 1 {
+        let mut line = read_line(body.next().expect("lines less than expected"));
+        result.append(&mut line);
+    }
+    let mut last =
+        body.next().expect("lines lessthan expected").into_iter().take(info.rem).collect();
+    result.append(&mut last);
+    result
 }
 
 
@@ -56,7 +71,7 @@ fn handle_header(header: &[u8]) -> DecodeInfo {
     let start = top_left.0;
     let size = decode_size(top_left.1);
     let rightmost = x.fold(0, |acc, (i, px)| if !is_empty(px) { i } else { acc });
-    DecodeInfo::new(start, rightmost - start + 1, size)
+    DecodeInfo::new(3 * start, (rightmost - start + 1) * 3, size)
 }
 
 fn is_empty(line: &[u8]) -> bool {
@@ -67,5 +82,8 @@ fn is_empty(line: &[u8]) -> bool {
 
 // TODO : something like &[u8;3]
 fn decode_size(pixel: &[u8]) -> usize {
-    2
+    pixel.iter()
+        .map(|&n| n as usize)
+        .fold((1, 0), |(base, acc), byte| (base * 256, acc + byte * base))
+        .1
 }
